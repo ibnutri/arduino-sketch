@@ -1,47 +1,61 @@
 /*
-HC-SR04 for Arduino
+ langsung ke arduino, sebelumnya ternyata sensornya rusak
+ HC-SR04 Ping distance sensor:
+ VCC to arduino 5v 
+ GND to arduino GND
+ Echo to Arduino pin 7 
+ Trig to Arduino pin 8
+ 
+ This sketch originates from Virtualmix: http://goo.gl/kJ8Gl
+ Has been modified by Winkle ink here: http://winkleink.blogspot.com.au/2012/05/arduino-hc-sr04-ultrasonic-distance.html
+ And modified further by ScottC here: http://arduinobasics.blogspot.com.au/2012/11/arduinobasics-hc-sr04-ultrasonic-sensor.html
+ on 10 Nov 2012.
+ */
 
-Entah kenapa return dari SR04 nya selalu 2,3,4 kekecilan :|
-*/
 
-const int TriggerPin = 8;      //Trig pin
-const int EchoPin = 9;         //Echo pin
-long Duration = 0;
+#define echoPin 7 // Echo Pin
+#define trigPin 8 // Trigger Pin
+#define LEDPin 13 // Onboard LED
 
-void setup(){
-  pinMode(TriggerPin,OUTPUT);  // Trigger is an output pin
-  pinMode(EchoPin,INPUT);      // Echo is an input pin
-  Serial.begin(9600);          // Serial Output
+int maximumRange = 200; // Maximum range needed
+int minimumRange = 0; // Minimum range needed
+long duration, distance; // Duration used to calculate distance
+
+void setup() {
+ Serial.begin (9600);
+ pinMode(trigPin, OUTPUT);
+ pinMode(echoPin, INPUT);
+ pinMode(LEDPin, OUTPUT); // Use LED indicator (if required)
 }
 
-void loop(){ 
-  digitalWrite(TriggerPin, LOW);                   
-  delayMicroseconds(2);
-  digitalWrite(TriggerPin, HIGH);          // Trigger pin to HIGH
-  delayMicroseconds(10);                   // 10us high 
-  digitalWrite(TriggerPin, LOW);           // Trigger pin to HIGH
+void loop() {
+/* The following trigPin/echoPin cycle is used to determine the
+ distance of the nearest object by bouncing soundwaves off of it. */ 
+ digitalWrite(trigPin, LOW); 
+ delayMicroseconds(2); 
+
+ digitalWrite(trigPin, HIGH);
+ delayMicroseconds(10); 
  
-  Duration = pulseIn(EchoPin,HIGH);        // Waits for the echo pin to get high
-                                           // returns the Duration in microseconds
-  Serial.println(Duration);
-  long Distance_mm = Distance(Duration);   // Use function to calculate the distance
+ digitalWrite(trigPin, LOW);
+ duration = pulseIn(echoPin, HIGH);
  
-  Serial.print("Distance = ");             // Output to serial
-  Serial.print(Distance_mm);
-  Serial.println(" mm");
+ //Calculate the distance (in cm) based on the speed of sound.
+ distance = duration/58.2;
  
-  delay(1000);                             // Wait to do next measurement
+ if (distance >= maximumRange || distance <= minimumRange){
+ /* Send a negative number to computer and Turn LED ON 
+ to indicate "out of range" */
+ Serial.println("-1");
+ digitalWrite(LEDPin, HIGH); 
+ }
+ else {
+ /* Send the distance to the computer using Serial protocol, and
+ turn LED OFF to indicate successful reading. */
+ Serial.println(distance);
+ digitalWrite(LEDPin, LOW); 
+ }
+ 
+ //Delay 50ms before next reading.
+ delay(50);
 }
-
-long Distance(long time)
-{
-    // Calculates the Distance in mm
-    // ((time)*(Speed of sound))/ toward and backward of object) * 10
-   
-    long DistanceCalc;                      // Calculation variable
-    DistanceCalc = ((time /2.9) / 2);     // Actual calculation in mm
-    //DistanceCalc = time / 74 / 2;         // Actual calculation in inches
-    return DistanceCalc;                    // return calculated value
-}
-
-
